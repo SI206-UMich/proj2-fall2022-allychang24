@@ -1,9 +1,16 @@
+# Name: Yun-Jung Channg
+# Email: allyc@umich.edu
+# ID: 62691025
+# Partner: Elaine Wu
+
+
 from xml.sax import parseString
 from bs4 import BeautifulSoup
 import re
 import os
 import csv
 import unittest
+import requests
 
 
 def get_listings_from_search_results(html_file):
@@ -25,7 +32,40 @@ def get_listings_from_search_results(html_file):
         ('Loft in Mission District', 210, '1944564'),  # example
     ]
     """
-    pass
+    f = open(html_file, 'r')
+    soup = BeautifulSoup(f, 'html.parser')
+    f.close()
+
+    titles = soup.find_all('div', class_='t1jojoys dir dir-ltr')
+    prices = soup.find_all('span', class_='_tyxjp1')
+    listing_id = soup.find_all('a', class_='ln2bl2p dir dir-ltr')
+    
+    
+    title_list = []
+    for title in titles:
+        info = title.text
+        title_list.append(info)
+    # print(title_list)
+
+    price_list = []
+    for price in prices:
+        info = price.text.strip("$")
+        price_list.append(info)
+    # print(price_list)
+
+    id_list = []
+    for id in listing_id:
+        x= id['target'].split('_')[1]
+        id_list.append(x)
+    # print(id_list)
+
+    listing_result = []
+    for i in range(len(title_list)):
+        tup = (title_list[i], price_list[i], id_list[i])
+        listing_result.append(tup)
+    # print (listing_result)
+    return listing_result
+
 
 
 def get_listing_information(listing_id):
@@ -52,8 +92,47 @@ def get_listing_information(listing_id):
         number of bedrooms
     )
     """
-    pass
 
+    files ="html_files/listing_" + listing_id + ".html"
+    f = open(files, "r")
+    f_hand = f.read()
+    soup = BeautifulSoup(f_hand, "html.parser")
+    f.close()
+
+    policy_num = soup.find("li", class_="f19phm7j dir dir-ltr")
+    policy_number = policy_num.find("span", class_="ll4r2nl dir dir-ltr").text
+
+    if "pending" in policy_number.lower():
+        policy_number = "Pending"
+    elif "exempt" in policy_number.lower():
+        policy_number = "Exempt"
+    else:
+        policy_number = policy_number
+    # print(policy_number)
+
+
+    p_type = soup.find("div", class_="_cv5qq4")
+    place_type = p_type.find("h2", class_="_14i3z6h").text
+
+    if "private" in place_type.lower():
+        place_type = "Private Room"
+    elif "shared" in place_type.lower():
+        place_type = "Shared Room"
+    else:
+        place_type = "Entire Room"
+    # print(place_type)
+
+
+    num_of_bedroom = soup.find_all("li", class_="l7n4lsf dir dir-ltr")[1]
+    number_of_bedroom = num_of_bedroom.find_all("span")[2].text.split(" ")[0]
+    if "studio" in number_of_bedroom.lower():
+        number_of_bedroom = 1
+    
+
+
+
+    tup = (policy_number, place_type, int(number_of_bedroom))
+    return tup
 
 def get_detailed_listing_database(html_file):
     """
@@ -69,8 +148,15 @@ def get_detailed_listing_database(html_file):
         ...
     ]
     """
-    pass
 
+    file = get_listings_from_search_results(html_file)
+    detailed_listing = []
+    for item in file:
+        info = get_listing_information(item[2])
+        detailed_listing.append(item + info)
+    return detailed_listing
+
+    
 
 def write_csv(data, filename):
     """
@@ -94,7 +180,12 @@ def write_csv(data, filename):
 
     This function should not return anything.
     """
-    pass
+    header = ["Listing Title", "Cost", "Listing ID", "Policy Number", "Place Type", "Number of Bedrooms"]
+    with open(filename, "w") as file:
+        writer = csv.writer(file)
+        writer.writerow(header)
+        writer.writerows(data)
+    
 
 
 def check_policy_numbers(data):
@@ -116,7 +207,17 @@ def check_policy_numbers(data):
     ]
 
     """
-    pass
+    listing_id = []
+    reg_ex1 = "20\d{2}-00\d{4}STR"
+    reg_ex2 = "STR-000\d{4}"
+    for num in data:
+        n = re.findall(reg_ex1, num[3])
+        n2 = re.findall(reg_ex2, num[3])
+        if len(n) == 0 and len(n2) == 0:
+            if num[3] != "pending" and num[3] != "exempt":
+                listing_id.append(num[2])
+    return listing_id
+               
 
 
 def extra_credit(listing_id):
@@ -147,11 +248,12 @@ class TestCases(unittest.TestCase):
         # check that the variable you saved after calling the function is a list
         self.assertEqual(type(listings), list)
         # check that each item in the list is a tuple
-
+        for item in listings:
+            self.assertEqual(type(item), tuple)
         # check that the first title, cost, and listing id tuple is correct (open the search results html and find it)
-
+        self.assertEqual(get_listings_from_search_results(listings[0]), ("Loft in Mission District", "210", "1944564"))
         # check that the last title is correct (open the search results html and find it)
-        pass
+        
 
     def test_get_listing_information(self):
         html_list = ["1623609",
