@@ -45,25 +45,21 @@ def get_listings_from_search_results(html_file):
     for title in titles:
         info = title.text
         title_list.append(info)
-    # print(title_list)
 
     price_list = []
     for price in prices:
         info = price.text.strip("$")
         price_list.append(int(info))
-    # print(price_list)
 
     id_list = []
     for id in listing_id:
         x= id['target'].split('_')[1]
         id_list.append(x)
-    # print(id_list)
 
     listing_result = []
     for i in range(len(title_list)):
         tup = (title_list[i], price_list[i], id_list[i])
         listing_result.append(tup)
-    # print (listing_result)
     return listing_result
 
 
@@ -108,7 +104,6 @@ def get_listing_information(listing_id):
         policy_number = "Exempt"
     else:
         policy_number = policy_number
-    # print(policy_number)
 
 
     p_type = soup.find("div", class_="_cv5qq4")
@@ -120,19 +115,14 @@ def get_listing_information(listing_id):
         place_type = "Shared Room"
     else:
         place_type = "Entire Room"
-    # print(place_type)
 
 
     num_of_bedroom = soup.find_all("li", class_="l7n4lsf dir dir-ltr")[1]
     number_of_bedroom = num_of_bedroom.find_all("span")[2].text.split(" ")[0]
     if "studio" in number_of_bedroom.lower():
         number_of_bedroom = 1
-    
-
-
 
     tup = (policy_number, place_type, int(number_of_bedroom))
-    # print(tup)
     return tup
 
 def get_detailed_listing_database(html_file):
@@ -155,10 +145,8 @@ def get_detailed_listing_database(html_file):
     for item in file:
         info = get_listing_information(item[2])
         detailed_listing.append(item + info)
-    # print(detailed_listing)
     return detailed_listing
 
-    
 
 def write_csv(data, filename):
     """
@@ -219,10 +207,8 @@ def check_policy_numbers(data):
         if len(n) == 0 and len(n2) == 0:
             if num[3] != "Pending" and num[3] != "License not needed per OSTR":
                 listing_id.append(num[2])
-    # print(listing_id)
     return listing_id
                
-
 
 def extra_credit(listing_id):
     """
@@ -247,9 +233,6 @@ def extra_credit(listing_id):
 
     # review = soup.find_all("h2", class_="_14i3z6h")
     # review_page = soup.find_all("span", class_="a8jt5op dir dir-ltr").text
-
-    
-
 
     pass
 
@@ -338,9 +321,9 @@ class TestCases(unittest.TestCase):
         # check that the header row is correct
         self.assertEqual(csv_lines[0], ["Listing Title", "Cost", "Listing ID", "Policy Number", "Place Type", "Number of Bedrooms"])
         # check that the next row is Private room in Mission District,82,51027324,Pending,Private Room,1
-        self.assertEqual(csv_lines[1], ["Private room in Mission District,82,51027324,Pending,Private Room,1"])
+        self.assertEqual(csv_lines[1], ["Private room in Mission District","82","51027324","Pending","Private Room","1"])
         # check that the last row is Apartment in Mission District,399,28668414,Pending,Entire Room,2
-        self.assertEqual(csv_lines[-1], ["Apartment in Mission District,399,28668414,Pending,Entire Room,2"])
+        self.assertEqual(csv_lines[-1], ["Apartment in Mission District","399","28668414","Pending","Entire Room","2"])
         
 
     def test_check_policy_numbers(self):
