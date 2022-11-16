@@ -50,7 +50,7 @@ def get_listings_from_search_results(html_file):
     price_list = []
     for price in prices:
         info = price.text.strip("$")
-        price_list.append(info)
+        price_list.append(int(info))
     # print(price_list)
 
     id_list = []
@@ -155,6 +155,7 @@ def get_detailed_listing_database(html_file):
     for item in file:
         info = get_listing_information(item[2])
         detailed_listing.append(item + info)
+    # print(detailed_listing)
     return detailed_listing
 
     
@@ -184,9 +185,10 @@ def write_csv(data, filename):
     header = ["Listing Title", "Cost", "Listing ID", "Policy Number", "Place Type", "Number of Bedrooms"]
     with open(filename, "w") as file:
         writer = csv.writer(file)
+        sorted_cost = sorted(data, key=lambda r: r[1])
         writer.writerow(header)
-        writer.writerows(data)
-    
+        for row in sorted_cost:
+            writer.writerow(row)
 
 
 def check_policy_numbers(data):
@@ -215,8 +217,9 @@ def check_policy_numbers(data):
         n = re.findall(reg_ex1, num[3])
         n2 = re.findall(reg_ex2, num[3])
         if len(n) == 0 and len(n2) == 0:
-            if num[3] != "pending" and num[3] != "exempt":
+            if num[3] != "Pending" and num[3] != "License not needed per OSTR":
                 listing_id.append(num[2])
+    # print(listing_id)
     return listing_id
                
 
@@ -235,6 +238,19 @@ def extra_credit(listing_id):
     gone over their 90 day limit, else return True, indicating the lister has
     never gone over their limit.
     """
+
+    # files ="html_files/listing_" + listing_id + "_reviews" + ".html"
+    # f = open(files, "r")
+    # f_hand = f.read()
+    # soup = BeautifulSoup(f_hand, "html.parser")
+    # f.close()
+
+    # review = soup.find_all("h2", class_="_14i3z6h")
+    # review_page = soup.find_all("span", class_="a8jt5op dir dir-ltr").text
+
+    
+
+
     pass
 
 
@@ -252,9 +268,9 @@ class TestCases(unittest.TestCase):
         for item in listings:
             self.assertEqual(type(item), tuple)
         # check that the first title, cost, and listing id tuple is correct (open the search results html and find it)
-        self.assertEqual(listings[0], ("Loft in Mission District", "210", "1944564"))
+        self.assertEqual(listings[0], ("Loft in Mission District", 210, "1944564"))
         # check that the last title is correct (open the search results html and find it)
-        self.assertEqual(listings[-1], ("Guest suite in Mission District", "238", "32871760"))
+        self.assertEqual(listings[-1], ("Guest suite in Mission District", 238, "32871760"))
         
 
     def test_get_listing_information(self):
@@ -296,14 +312,14 @@ class TestCases(unittest.TestCase):
             # assert each item in the list of listings is a tuple
             self.assertEqual(type(item), tuple)
             # check that each tuple has a length of 6
-
+            self.assertEqual(len(item), 6)
         # check that the first tuple is made up of the following:
         # 'Loft in Mission District', 210, '1944564', '2022-004088STR', 'Entire Room', 1
-
+        self.assertEqual(detailed_database[0], ('Loft in Mission District', 210, '1944564', '2022-004088STR', 'Entire Room', 1))
         # check that the last tuple is made up of the following:
         # 'Guest suite in Mission District', 238, '32871760', 'STR-0004707', 'Entire Room', 1
-
-        pass
+        self.assertEqual(detailed_database[-1], ('Guest suite in Mission District', 238, '32871760', 'STR-0004707', 'Entire Room', 1))
+        
 
     def test_write_csv(self):
         # call get_detailed_listing_database on "html_files/mission_district_search_results.html"
@@ -320,12 +336,12 @@ class TestCases(unittest.TestCase):
         # check that there are 21 lines in the csv
         self.assertEqual(len(csv_lines), 21)
         # check that the header row is correct
-
+        self.assertEqual(csv_lines[0], ["Listing Title", "Cost", "Listing ID", "Policy Number", "Place Type", "Number of Bedrooms"])
         # check that the next row is Private room in Mission District,82,51027324,Pending,Private Room,1
-
+        self.assertEqual(csv_lines[1], ["Private room in Mission District,82,51027324,Pending,Private Room,1"])
         # check that the last row is Apartment in Mission District,399,28668414,Pending,Entire Room,2
-
-        pass
+        self.assertEqual(csv_lines[-1], ["Apartment in Mission District,399,28668414,Pending,Entire Room,2"])
+        
 
     def test_check_policy_numbers(self):
         # call get_detailed_listing_database on "html_files/mission_district_search_results.html"
@@ -336,12 +352,14 @@ class TestCases(unittest.TestCase):
         # check that the return value is a list
         self.assertEqual(type(invalid_listings), list)
         # check that there is exactly one element in the string
-
+        self.assertEqual(len(invalid_listings), 1)
         # check that the element in the list is a string
-
+        for item in invalid_listings:
+            self.assertEqual(type(item), str)
         # check that the first element in the list is '16204265'
-        pass
+        self.assertEqual(invalid_listings[0], "16204265")
 
+        
 
 if __name__ == '__main__':
     database = get_detailed_listing_database("html_files/mission_district_search_results.html")
